@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "738527653955",
+    "project_id": "callkeep-60eb6",
+    "storage_bucket": "callkeep-60eb6.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:738527653955:android:e27b19c01eae847884a4f6",
+        "android_client_info": {
+          "package_name": "com.github.cloudwebrtc.flutter_callkeep_example"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "738527653955-b1iailkp664mrog411td1egoujhm26h5.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBZBpFGWDoasbEhPSFqmF8-9tcU-_8IWMM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "738527653955-b1iailkp664mrog411td1egoujhm26h5.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
