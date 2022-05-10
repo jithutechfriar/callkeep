@@ -93,6 +93,7 @@ public class CallKeepModule {
         this._eventChannel = new MethodChannel(messenger, "FlutterCallKeep.Event");
     }
 
+
     public void setActivity(Activity activity) {
         this._currentActivity = activity;
     }
