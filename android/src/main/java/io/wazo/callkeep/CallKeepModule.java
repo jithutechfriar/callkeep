@@ -275,6 +275,7 @@ public class CallKeepModule {
 
         setSettings(options);
     }
+
     
     public void registerPhoneAccount() {
         if (!isConnectionServiceAvailable()) {
@@ -289,6 +290,7 @@ public class CallKeepModule {
         if (!isConnectionServiceAvailable()) {
             return;
         }
+
         voiceBroadcastReceiver = new VoiceBroadcastReceiver();
         registerReceiver();
         VoiceConnectionService.setPhoneAccountHandle(handle);
