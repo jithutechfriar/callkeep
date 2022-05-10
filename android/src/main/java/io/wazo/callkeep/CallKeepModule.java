@@ -87,6 +87,7 @@ public class CallKeepModule {
     Activity _currentActivity = null;
     MethodChannel _eventChannel;
 
+
     public CallKeepModule(Context context, BinaryMessenger messenger) {
         this._context = context;
         this._eventChannel = new MethodChannel(messenger, "FlutterCallKeep.Event");
