@@ -305,7 +305,7 @@ public class CallKeepModule {
         Log.d(TAG, "displayIncomingCall number: " + number + ", callerName: " + callerName);
 
         Bundle extras = new Bundle();
-        Uri uri = Uri.fromParts(PhoneAccount.SCHEME_SIP, number, null); //jithu
+        Uri uri = Uri.fromParts(PhoneAccount.SCHEME_TEL, number, null); //jithu
 
         extras.putParcelable(TelecomManager.EXTRA_INCOMING_CALL_ADDRESS, uri);
         extras.putString(EXTRA_CALLER_NAME, callerName);
@@ -340,7 +340,7 @@ public class CallKeepModule {
 
         Bundle extras = new Bundle();
 //        Uri uri = Uri.fromParts(PhoneAccount.SCHEME_SIP, number, null); //jithu comment
-        Uri uri = Uri.fromParts(PhoneAccount.SCHEME_SIP, "test_call", null);
+        Uri uri = Uri.fromParts(PhoneAccount.SCHEME_TEL, "test_call", null);
 
         Bundle callExtras = new Bundle();
         callExtras.putString(EXTRA_CALLER_NAME, callerName);
