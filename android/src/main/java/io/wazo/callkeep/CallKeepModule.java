@@ -68,6 +68,12 @@ import io.wazo.callkeep.utils.PermissionUtils;
 import static io.wazo.callkeep.Constants.*;
 import static io.wazo.callkeep.VoiceConnectionService.setSettings;
 
+import com.google.android.gms.common.util.MapUtils;
+import com.google.gson.Gson;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 // @see https://github.com/kbagchiGWC/voice-quickstart-android/blob/9a2aff7fbe0d0a5ae9457b48e9ad408740dfb968/exampleConnectionService/src/main/java/com/twilio/voice/examples/connectionservice/VoiceConnectionServiceActivity.java
 public class CallKeepModule {
     public static final int REQUEST_READ_PHONE_STATE = 1337;
@@ -93,7 +99,7 @@ public class CallKeepModule {
     private ConstraintsMap _settings;
     Activity _currentActivity = null;
     MethodChannel _eventChannel;
-
+//    private PhoneAccountHandle accountHandle; //jithu
 
     public CallKeepModule(Context context, BinaryMessenger messenger) {
         this._context = context;
