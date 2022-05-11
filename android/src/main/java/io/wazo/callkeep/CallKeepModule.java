@@ -25,6 +25,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Icon;
@@ -65,6 +66,7 @@ import io.wazo.callkeep.utils.ConstraintsArray;
 import io.wazo.callkeep.utils.PermissionUtils;
 
 import static io.wazo.callkeep.Constants.*;
+import static io.wazo.callkeep.VoiceConnectionService.setSettings;
 
 // @see https://github.com/kbagchiGWC/voice-quickstart-android/blob/9a2aff7fbe0d0a5ae9457b48e9ad408740dfb968/exampleConnectionService/src/main/java/com/twilio/voice/examples/connectionservice/VoiceConnectionServiceActivity.java
 public class CallKeepModule {
@@ -73,10 +75,12 @@ public class CallKeepModule {
 
     private static final String E_ACTIVITY_DOES_NOT_EXIST = "E_ACTIVITY_DOES_NOT_EXIST";
     private static final String REACT_NATIVE_MODULE_NAME = "CallKeep";
-    private static final String[] permissions = { Manifest.permission.READ_PHONE_STATE,
-            Manifest.permission.CALL_PHONE, Manifest.permission.RECORD_AUDIO ,
-            Manifest.permission.READ_PHONE_NUMBERS,
-            Manifest.permission.MANAGE_OWN_CALLS,
+    private static String[] permissions = {
+            Manifest.permission.READ_PHONE_STATE,
+            Manifest.permission.CALL_PHONE,
+            Manifest.permission.RECORD_AUDIO ,
+            Manifest.permission.READ_PHONE_NUMBERS, //jithu
+            Manifest.permission.MANAGE_OWN_CALLS, //jithu
     };
 
     private static final String TAG = "FLT:CallKeepModule";
@@ -94,6 +98,15 @@ public class CallKeepModule {
     public CallKeepModule(Context context, BinaryMessenger messenger) {
         this._context = context;
         this._eventChannel = new MethodChannel(messenger, "FlutterCallKeep.Event");
+    }
+
+
+    private boolean isSelfManaged() {
+        try {
+            return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && _settings.hasKey("selfManaged") && _settings.getBoolean("selfManaged");
+        } catch (Exception e) {
+            return false;
+        }
     }
 
 
@@ -214,7 +227,7 @@ public class CallKeepModule {
             }
             break;
             case "foregroundService": {
-                VoiceConnectionService.setSettings(new ConstraintsMap((Map<String, Object>)call.argument("settings")));
+                setSettings(new ConstraintsMap((Map<String, Object>)call.argument("settings")));
                 result.success(null);
             }
             break;
@@ -230,16 +243,34 @@ public class CallKeepModule {
             return;
         }
         VoiceConnectionService.setAvailable(false);
-        this._settings = options;
+        VoiceConnectionService.setInitialized(true);
+        setSettings(options);
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (isSelfManaged()) {
+                Log.d(TAG, "[RNCallKeepModule] API Version supports self managed, and is enabled in setup");
+            }
+            else {
+                Log.d(TAG, "[RNCallKeepModule] API Version supports self managed, but it is not enabled in setup");
+            }
+        }
+
+        // If we're running in self managed mode we need fewer permissions.
+        if(isSelfManaged()) {
+            Log.d(TAG, "[RNCallKeepModule] setup, adding RECORD_AUDIO in permissions in self managed");
+            permissions = new String[]{ Manifest.permission.RECORD_AUDIO };
+        }
+
         if (isConnectionServiceAvailable()) {
-            this.registerPhoneAccount();
+            this.registerPhoneAccount(options);
             this.registerEvents();
             VoiceConnectionService.setAvailable(true);
         }
 
-        VoiceConnectionService.setSettings(options);
+        setSettings(options);
     }
-    
+
+
     public void registerPhoneAccount() {
         if (!isConnectionServiceAvailable()) {
             return;
@@ -253,6 +284,7 @@ public class CallKeepModule {
         if (!isConnectionServiceAvailable()) {
             return;
         }
+
         voiceBroadcastReceiver = new VoiceBroadcastReceiver();
         registerReceiver();
         VoiceConnectionService.setPhoneAccountHandle(handle);
@@ -267,7 +299,7 @@ public class CallKeepModule {
         Log.d(TAG, "displayIncomingCall number: " + number + ", callerName: " + callerName);
 
         Bundle extras = new Bundle();
-        Uri uri = Uri.fromParts(PhoneAccount.SCHEME_TEL, number, null);
+        Uri uri = Uri.fromParts(PhoneAccount.SCHEME_TEL, number, null); //jithu
 
         extras.putParcelable(TelecomManager.EXTRA_INCOMING_CALL_ADDRESS, uri);
         extras.putString(EXTRA_CALLER_NAME, callerName);
@@ -276,7 +308,9 @@ public class CallKeepModule {
         telecomManager.addNewIncomingCall(handle, extras);
     }
 
-    
+
+
+
     public void answerIncomingCall(String uuid) {
         if (!isConnectionServiceAvailable() || !hasPhoneAccount()) {
             return;
@@ -299,7 +333,8 @@ public class CallKeepModule {
         Log.d(TAG, "startCall number: " + number + ", callerName: " + callerName);
 
         Bundle extras = new Bundle();
-        Uri uri = Uri.fromParts(PhoneAccount.SCHEME_TEL, number, null);
+//        Uri uri = Uri.fromParts(PhoneAccount.SCHEME_SIP, number, null); //jithu comment
+        Uri uri = Uri.fromParts(PhoneAccount.SCHEME_TEL, "test_call", null);
 
         Bundle callExtras = new Bundle();
         callExtras.putString(EXTRA_CALLER_NAME, callerName);
@@ -585,8 +620,28 @@ public class CallKeepModule {
         ComponentName cName = new ComponentName(context, VoiceConnectionService.class);
         String appName = this.getApplicationName(context);
 
+
         handle = new PhoneAccountHandle(cName, appName);
         telecomManager = (TelecomManager) context.getSystemService(Context.TELECOM_SERVICE);
+    }
+
+    private  void registerPhoneAccount(ConstraintsMap options){
+
+        storeSettings(options);
+
+        if (!isConnectionServiceAvailable()) {
+            Log.w(TAG, "[RNCallKeepModule] registerPhoneAccount ignored due to no ConnectionService");
+            return;
+        }
+
+        Log.d(TAG, "[RNCallKeepModule] registerPhoneAccount");
+        Context context = this.getAppContext();
+        if (context == null) {
+            Log.w(TAG, "[RNCallKeepModule][registerPhoneAccount] no react context found.");
+            return;
+        }
+
+        this.registerPhoneAccount(context);
     }
 
     private void registerPhoneAccount(Context appContext) {
@@ -597,8 +652,11 @@ public class CallKeepModule {
         this.initializeTelecomManager();
         String appName = this.getApplicationName(this.getAppContext());
 
-        PhoneAccount.Builder builder = new PhoneAccount.Builder(handle, appName)
-                .setCapabilities(PhoneAccount.CAPABILITY_CALL_PROVIDER);
+        PhoneAccount.Builder builder = null; //jithu
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            builder = new PhoneAccount.Builder(handle, appName)
+                    .setCapabilities(PhoneAccount.CAPABILITY_SELF_MANAGED);
+        }
 
         if (_settings != null && _settings.hasKey("imageName")) {
             int identifier = appContext.getResources().getIdentifier(_settings.getString("imageName"), "drawable", appContext.getPackageName());
@@ -613,6 +671,28 @@ public class CallKeepModule {
         telecomManager.registerPhoneAccount(account);
     }
 
+
+    // Store all callkeep settings in JSON
+    private void storeSettings(ConstraintsMap options) {
+//        Context context = getInstance(null, false).getAppContext();
+        Context context = getAppContext();
+        if (context == null) {
+            Log.w(TAG, "[RNCallKeepModule][storeSettings] no react context found.");
+            return;
+        }
+
+        SharedPreferences sharedPref = context.getSharedPreferences("rn-callkeep", Context.MODE_PRIVATE);
+        try {
+//            JSONObject jsonObject = MapUtils.writeStringMapToJson(options);
+            Gson gson = new Gson();
+//            JSONObject jsonObject = new JSONObject(options);
+            String jsonString = gson.toJson(options);
+            sharedPref.edit().putString("settings", jsonString).apply();
+        } catch (Exception e) {
+
+        }
+    }
+
     private void sendEventToFlutter(String eventName, @Nullable ConstraintsMap params) {
         _eventChannel.invokeMethod(eventName, params.toMap());
     }
@@ -625,20 +705,29 @@ public class CallKeepModule {
     }
 
     private Boolean hasPermissions() {
-        boolean hasPermissions = true;
-        for (String permission : permissions) {
-            int permissionCheck = ContextCompat.checkSelfPermission(_currentActivity, permission);
-            if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
-                hasPermissions = false;
-            }
-        }
 
-        return hasPermissions;
+        //jithu comment start
+
+//        boolean hasPermissions = true;
+//        for (String permission : permissions) {
+//            int permissionCheck = ContextCompat.checkSelfPermission(_currentActivity, permission);
+//            if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
+//                hasPermissions = false;
+//            }
+//        }
+//
+//        return hasPermissions;
+
+        //jithu commend end
+
+        return true; //jithu
+
     }
 
     private static boolean hasPhoneAccount() {
-        return isConnectionServiceAvailable() && telecomManager != null
-            && telecomManager.getPhoneAccount(handle) != null && telecomManager.getPhoneAccount(handle).isEnabled();
+//        return isConnectionServiceAvailable() && telecomManager != null
+//            && telecomManager.getPhoneAccount(handle) != null && telecomManager.getPhoneAccount(handle).isEnabled(); //jithu comment
+        return true;
     }
 
     private void registerReceiver() {
