@@ -276,6 +276,7 @@ public class CallKeepModule {
         setSettings(options);
     }
 
+
     
     public void registerPhoneAccount() {
         if (!isConnectionServiceAvailable()) {
