@@ -101,6 +101,7 @@ public class CallKeepModule {
     MethodChannel _eventChannel;
 //    private PhoneAccountHandle accountHandle; //jithu
 
+
     public CallKeepModule(Context context, BinaryMessenger messenger) {
         this._context = context;
         this._eventChannel = new MethodChannel(messenger, "FlutterCallKeep.Event");
@@ -276,7 +277,7 @@ public class CallKeepModule {
         setSettings(options);
     }
 
-    
+
     public void registerPhoneAccount() {
         if (!isConnectionServiceAvailable()) {
             return;
@@ -305,7 +306,7 @@ public class CallKeepModule {
         Log.d(TAG, "displayIncomingCall number: " + number + ", callerName: " + callerName);
 
         Bundle extras = new Bundle();
-        Uri uri = Uri.fromParts(PhoneAccount.SCHEME_SIP, number, null); //jithu
+        Uri uri = Uri.fromParts(PhoneAccount.SCHEME_TEL, number, null);
 
         extras.putParcelable(TelecomManager.EXTRA_INCOMING_CALL_ADDRESS, uri);
         extras.putString(EXTRA_CALLER_NAME, callerName);
@@ -316,7 +317,7 @@ public class CallKeepModule {
 
 
 
-    
+
     public void answerIncomingCall(String uuid) {
         if (!isConnectionServiceAvailable() || !hasPhoneAccount()) {
             return;
@@ -339,8 +340,7 @@ public class CallKeepModule {
         Log.d(TAG, "startCall number: " + number + ", callerName: " + callerName);
 
         Bundle extras = new Bundle();
-//        Uri uri = Uri.fromParts(PhoneAccount.SCHEME_SIP, number, null); //jithu comment
-        Uri uri = Uri.fromParts(PhoneAccount.SCHEME_SIP, "test_call", null);
+        Uri uri = Uri.fromParts(PhoneAccount.SCHEME_TEL, number, null);
 
         Bundle callExtras = new Bundle();
         callExtras.putString(EXTRA_CALLER_NAME, callerName);
