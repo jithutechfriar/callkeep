@@ -315,7 +315,12 @@ public class CallKeepModule {
         telecomManager.addNewIncomingCall(handle, extras);
 
 
+        Log.i(TAG, "********************* name "+callerName+ "number "+number);
+
         Intent intent = new Intent(_context, CallNotificationService.class);
+        intent.putExtra("callerName",callerName);
+        intent.putExtra("number",number);
+        intent.putExtra("uuid",uuid);
         _context.startService(intent);
 
     }
@@ -323,7 +328,9 @@ public class CallKeepModule {
 
 
     
-    public void answerIncomingCall(String uuid) {
+    public static void answerIncomingCall(String uuid) {
+
+        Log.i(TAG, "answerIncomingCall: called");
         if (!isConnectionServiceAvailable() || !hasPhoneAccount()) {
             return;
         }
@@ -480,7 +487,8 @@ public class CallKeepModule {
     }
 
     
-    public void rejectCall(String uuid) {
+    public static void rejectCall(String uuid) {
+        Log.i(TAG, "rejectCall: called");
         if (!isConnectionServiceAvailable() || !hasPhoneAccount()) {
             return;
         }

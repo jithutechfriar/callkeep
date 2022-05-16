@@ -21,11 +21,14 @@ import androidx.core.app.NotificationCompat;
 
 import java.io.IOException;
 
+import io.wazo.callkeep.CallKeepModule;
+
 public class CallNotificationService extends Service {
     static MediaPlayer ringtonePlayer;
     static NotificationManager notificationManager;
     private static boolean isCallAccepted = false;
     private static String TAG_IS_CALL_ACCEPTED = "isCallAccepted";
+    private static String callerName="Name",number="Number",uuid;
 
     @Nullable
     @Override
@@ -37,7 +40,17 @@ public class CallNotificationService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        callerName = intent.getStringExtra("callerName");
+        number = intent.getStringExtra("number");
+        uuid = intent.getStringExtra("uuid");
         showNotification();
+        return super.onStartCommand(intent, flags, startId);
     }
 
     public static void callAnswer() {
@@ -87,8 +100,8 @@ public class CallNotificationService extends Service {
         Notification notification = new NotificationCompat.Builder(this, "channel01")
                 .setSmallIcon(android.R.drawable.ic_dialog_info)
                 .setLargeIcon(BitmapFactory.decodeResource(getResources(), android.R.drawable.ic_dialog_info))
-                .setContentTitle("Jithuraj")
-                .setContentText("You have an incoming call")
+                .setContentTitle(callerName)
+                .setContentText(number)
                 .setDefaults(Notification.DEFAULT_LIGHTS | Notification.DEFAULT_VIBRATE)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setCategory(NotificationCompat.CATEGORY_CALL)
@@ -114,9 +127,11 @@ public class CallNotificationService extends Service {
         isCallAccepted = intent.getBooleanExtra(TAG_IS_CALL_ACCEPTED, false);
 
         if (isCallAccepted) {
-            Log.i("log", "handleNotificationAction: Call accepted");
+//            Log.i("log", "handleNotificationAction: Call accepted");
+            CallKeepModule.answerIncomingCall(uuid);
         } else {
-            Log.i("log", "handleNotificationAction: Call declined");
+            CallKeepModule.rejectCall(uuid);
+//            Log.i("log", "handleNotificationAction: Call declined");
         }
 
         stopRingtone();
