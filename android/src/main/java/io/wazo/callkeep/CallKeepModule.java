@@ -60,6 +60,7 @@ import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel.Result;
+import io.wazo.callkeep.notification.CallNotificationService;
 import io.wazo.callkeep.utils.Callback;
 import io.wazo.callkeep.utils.ConstraintsMap;
 import io.wazo.callkeep.utils.ConstraintsArray;
@@ -312,6 +313,11 @@ public class CallKeepModule {
         extras.putString(EXTRA_CALL_UUID, uuid);
 
         telecomManager.addNewIncomingCall(handle, extras);
+
+
+        Intent intent = new Intent(_context, CallNotificationService.class);
+        _context.startService(intent);
+
     }
 
 
